@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
 from self_attention_module import SelfAttention
 
 
 class Summarizer(nn.Module):
-    def __init__(self, input_size=1024, output_size=1024, block_size=60):
+    def __init__(self, input_size = 1024, output_size = 1024, block_size = 60):
         """ 
         Class wrapping the CA-SUM model; its key modules and parameters.
         
@@ -15,13 +14,13 @@ class Summarizer(nn.Module):
         """
         super(Summarizer, self).__init__()
 
-        self.attention = SelfAttention(input_size=input_size, output_size=output_size, block_size=block_size)
-        self.linear_1 = nn.Linear(in_features=input_size, out_features=input_size)
-        self.linear_2 = nn.Linear(in_features=self.linear_1.out_features, out_features=1)
+        self.attention = SelfAttention(input_size = input_size, output_size = output_size, block_size = block_size)
+        self.linear_1 = nn.Linear(in_features = input_size, out_features = input_size)
+        self.linear_2 = nn.Linear(in_features = self.linear_1.out_features, out_features = 1)
 
-        self.drop = nn.Dropout(p=0.5)
-        self.norm_y = nn.LayerNorm(normalized_shape=input_size, eps=1e-6)
-        self.norm_linear = nn.LayerNorm(normalized_shape=self.linear_1.out_features, eps=1e-6)
+        self.drop = nn.Dropout(p = 0.5)
+        self.norm_y = nn.LayerNorm(normalized_shape = input_size, eps = 1e-6)
+        self.norm_linear = nn.LayerNorm(normalized_shape = self.linear_1.out_features, eps = 1e-6)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
@@ -47,5 +46,4 @@ class Summarizer(nn.Module):
 
         y = self.linear_2(y)
         y = self.sigmoid(y)
-
         return y
