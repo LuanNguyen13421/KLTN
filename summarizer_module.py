@@ -6,7 +6,8 @@ from self_attention_module import SelfAttention
 
 class Summarizer(nn.Module):
     def __init__(self, input_size=1024, output_size=1024, block_size=60):
-        """ Class wrapping the CA-SUM model; its key modules and parameters.
+        """ 
+        Class wrapping the CA-SUM model; its key modules and parameters.
         
         :param int input_size: The expected input feature size.
         :param int output_size: The produced output feature size.
@@ -25,13 +26,12 @@ class Summarizer(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, frame_features):
-        """ Produce frame-level importance scores from the frame features, using the CA-SUM model.
+        """ 
+        Produce frame-level importance scores from the frame features, using the CA-SUM model.
 
         :param torch.Tensor frame_features: Tensor of shape [T, input_size] containing the frame features produced by 
         using the pool5 layer of GoogleNet.
-        :return: A tuple of:
-            y: Tensor with shape [1, T] containing the frames importance scores in [0, 1].
-            attn_weights: Tensor with shape [T, T] containing the attention weights.
+        :return: A Tensor with shape [1, T] containing the frames importance scores in [0, 1].
         """
         residual = frame_features
         weighted_value = self.attention(frame_features)

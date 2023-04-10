@@ -47,9 +47,7 @@ class SelfAttention(nn.Module):
         the frames attentive uniqueness and the diversity.
 
         :param torch.Tensor x: Frame features with shape [T, input_size].
-        :return: A tuple of:
-                    y: The computed weighted features, with shape [T, input_size].
-                    att_win : The Block diagonal sparse attention matrix, with shape [T, T].
+        :return: A torch.Tensor containing the computed weighted features, with shape [T, input_size].
         """
         # Compute the pairwise dissimilarity of each frame, on the initial feature space (GoogleNet features)
         x_unit = F.normalize(x, p = 2, dim = 1)
