@@ -13,7 +13,7 @@ class Config(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-        self.set_dataset_dir(self.reg_factor, self.video_type)
+        self.set_dataset_dir(self.video_type)
 
     def set_dataset_dir(self, video_type = 'SumMe'):
         """ 
@@ -31,21 +31,7 @@ class Config(object):
         config_str += pprint.pformat(self.__dict__)
         return config_str
 
-def str2bool(v):
-    """ 
-    Transcode string to boolean.
-
-    :param str v: String to be transcoded.
-    :return: The boolean transcoding of the string.
-    """
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
-def get_config(parse=True, **optional_kwargs):
+def get_config(**optional_kwargs):
     """ 
     Get configurations as attributes of class
     1. Parse configurations with argparse.
@@ -57,34 +43,36 @@ def get_config(parse=True, **optional_kwargs):
     # Dataset options
     parser.add_argument('-d', '--dataset', type = str, required = True, help = "Path to h5 dataset (required)")
     parser.add_argument('-s', '--split', type = str, required = True, help = "Path to split file (required)")
-    parser.add_argument('--split-id', type = int, default = 0, help = "Split index [0-4] (default: 0)")
-    parser.add_argument('-m', '--metric', type = str, required = True, choices = ['tvsum', 'summe'], help = "Evaluation metric ['tvsum', 'summe']")
+    parser.add_argument('--split_id', type = int, default = 0, help = "Split index [0-4] (default: 0)")
+    parser.add_argument('--video_type', type = str, required = True, choices = ['tvsum', 'summe'], help = "Dataset to be used ['tvsum', 'summe']")
     
     # Mode
     parser.add_argument('--mode', type = str, default = 'train', help ='Mode for the configuration [train | test]')
-    parser.add_argument('--verbose', type = str2bool, default = 'true', help = 'Print or not training messages')
-    parser.add_argument('--video_type', type = str, default = 'SumMe', help = 'Dataset to be used')
+    parser.add_argument('--verbose', action = 'store_true', help = 'Print or not print the training messages')
 
     # Model
     parser.add_argument('--input_size', type = int, default = 1024, help = 'Feature size expected in the input')
     parser.add_argument('--block_size', type = int, default = 60, help = "Size of blocks used inside the attention matrix")
-    parser.add_argument('--init_type', type = str, default = "xavier", help = 'Weight initialization method')
-    parser.add_argument('--init_gain', type = float, default = 1.4142, help = 'Scaling factor for the initialization methods')
 
-    # Train
-    parser.add_argument('--n_epochs', type = int, default = 400, help = 'Number of training epochs')
-    parser.add_argument('--batch_size', type = int, default = 20, help = 'Size of each batch in training')
-    parser.add_argument('--seed', type = int, default = 12345, help = 'Chosen seed for generating random numbers')
-    parser.add_argument('--clip', type = float, default = 5.0, help = 'Max norm of the gradients')
-    parser.add_argument('--lr', type = float, default = 5e-4, help = 'Learning rate used for the modules')
-    parser.add_argument('--l2_req', type = float, default = 1e-5, help = 'Weight regularization factor')
-    parser.add_argument('--reg_factor', type = float, default = 0.6, help = 'Length regularization factor')
+    # Optimization options
+    parser.add_argument('--lr', type = float, default = 1e-05, help = "Learning rate (default: 1e-05)")
+    parser.add_argument('--weight_decay', type = float, default = 1e-05, help = "Ưeight decay rate (default: 1e-05)")
+    parser.add_argument('--max_epoch', type = int, default = 60, help = "Maximum epoch for training (default: 60)")
+    parser.add_argument('--stepsize', type = int, default = 30, help = "How many steps to decay learning rate (default: 30)")
+    parser.add_argument('--gamma', type = float, default = 0.1, help = "Learning rate decay (default: 0.1)")
+    parser.add_argument('--num_episode', type = int, default = 5, help = "Number of episodes (default: 5)")
+    parser.add_argument('--beta', type = float, default = 0.01, help = "Weight for summary length penalty term (default: 0.01)")
 
-    if parse:
-        kwargs = parser.parse_args()
-    else:
-        kwargs = parser.parse_known_args()[0]
+    # Misc
+    parser.add_argument('--seed', type = int, default = 1, help = "Random seed (default: 1)")
+    parser.add_argument('--gpu', type = str, default = '0', help = "Which gpu devices to use")
+    parser.add_argument('--use_cpu', action = 'store_true', help = "Use cpu device")
+    parser.add_argument('--evaluate', action = 'store_true', help = "Whether to do evaluation only")
+    parser.add_argument('--resume', type = str, default = '', help = "Path to resume file")
+    parser.add_argument('--save_results', action = 'store_true', help = "Whether to save output results")
 
+    kwargs = parser.parse_args()
+    
     # Namespace => Dictionary
     kwargs = vars(kwargs)
     kwargs.update(optional_kwargs)
