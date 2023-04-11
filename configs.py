@@ -8,7 +8,7 @@ save_dir = Path('./Summaries/')
 class Config(object):
     def __init__(self, **kwargs):
         """ Configuration Class: set kwargs as class attributes with setattr. """
-        self.score_dir, self.save_dir = None, None, None
+        self.score_dir, self.save_dir = None, None
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -22,8 +22,8 @@ class Config(object):
         :param float reg_factor: The utilized length regularization factor.
         :param str video_type: The Dataset being used, SumMe or TVSum.
         """
-        self.score_dir = save_dir.joinpath(video_type, 'results/split' + str(self.split_index))
-        self.save_dir = save_dir.joinpath(video_type, 'models/split' + str(self.split_index))
+        self.score_dir = save_dir.joinpath(video_type, 'results/split' + str(self.split_id))
+        self.save_dir = save_dir.joinpath(video_type, 'models/split' + str(self.split_id))
 
     def __repr__(self):
         """ Pretty-print configurations in alphabetical order. """
@@ -44,7 +44,7 @@ def get_config(**optional_kwargs):
     parser.add_argument('-d', '--dataset', type = str, required = True, help = "Path to h5 dataset (required)")
     parser.add_argument('-s', '--split', type = str, required = True, help = "Path to split file (required)")
     parser.add_argument('--split_id', type = int, default = 0, help = "Split index [0-4] (default: 0)")
-    parser.add_argument('--video_type', type = str, required = True, choices = ['tvsum', 'summe'], help = "Dataset to be used ['tvsum', 'summe']")
+    parser.add_argument('-vt', '--video_type', type = str, required = True, choices = ['tvsum', 'summe'], help = "Dataset to be used ['tvsum', 'summe']")
     
     # Mode
     parser.add_argument('--mode', type = str, default = 'train', help ='Mode for the configuration [train | test]')
