@@ -42,9 +42,8 @@ def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu):
         for idx in idxs:
             key = train_keys[idx]
             seq = dataset[key]['features'][...] # sequence of features, (seq_len, dim)
-            seq = torch.from_numpy(seq).unsqueeze(0) # input shape (1, seq_len, dim)
+            seq = torch.from_numpy(seq)
             if use_gpu: seq = seq.cuda()
-            seq = seq.squeeze(0).to("cpu")
             probs = model(seq)
             probs = probs.clone().detach().requires_grad_(True).unsqueeze(0)
 
@@ -100,10 +99,8 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
 
         for key_idx, key in enumerate(test_keys):
             seq = dataset[key]['features'][...]
-            seq = torch.from_numpy(seq).unsqueeze(0)
-            if use_gpu:
-                seq = seq.cuda()
-            seq = seq.squeeze(0).to("cpu")
+            seq = torch.from_numpy(seq)
+            if use_gpu: seq = seq.cuda()
             probs = model(seq)
             probs = probs.unsqueeze(0)
             probs = probs.cpu().squeeze().numpy()
