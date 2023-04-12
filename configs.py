@@ -22,8 +22,8 @@ class Config(object):
         :param float reg_factor: The utilized length regularization factor.
         :param str video_type: The Dataset being used, SumMe or TVSum.
         """
-        self.score_dir = save_dir.joinpath(video_type, 'results/split' + str(self.split_id))
-        self.save_dir = save_dir.joinpath(video_type, 'models/split' + str(self.split_id))
+        self.score_dir = save_dir.joinpath(video_type, 'split' + str(self.split_id), 'results')
+        self.save_dir = save_dir.joinpath(video_type, 'split' + str(self.split_id), 'models')
 
     def __repr__(self):
         """ Pretty-print configurations in alphabetical order. """
