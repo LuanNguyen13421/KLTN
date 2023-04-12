@@ -18,14 +18,24 @@ from configs import get_config
 from summarizer_module import *
 import vsum_tools
 
-def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, start_epoch):
-    print("==> Start training")
+def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu):
+    """ 
+    Main function to train the model. 
+    
+    :param Config config: a class for storing configuration settings.
+    :param Summarizer model: model using attention mechanism (Details: summarizer_module.py)
+    :param H5PY dataset: h5 dataset
+    :param torch.optim.Adam optimizer: this object is utilized to manage the optimization process of a neural network model using the Adam optimization algorithm.
+    :param list train_keys: a list id of training videos
+    :param bool use_gpu: using gpu or not
+    """
+    print("====> Start training...")
     start_time = time.time()
     model.train()
     baselines = {key: 0. for key in train_keys}
     reward_writers = {key: [] for key in train_keys}
 
-    for epoch in range(start_epoch, config.max_epoch):
+    for epoch in range(0, config.max_epoch):
         idxs = np.arange(len(train_keys))
         np.random.shuffle(idxs)
 
@@ -44,7 +54,7 @@ def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, start_epo
             for _ in range(config.num_episode):
                 actions = m.sample()
                 log_probs = m.log_prob(actions)
-                reward = compute_reward(seq, actions, use_gpu=use_gpu)
+                reward = compute_reward(seq, actions, use_gpu = use_gpu)
                 expected_reward = log_probs.mean() * (reward - baselines[key])
                 cost -= expected_reward
                 epis_rewards.append(reward.item())
@@ -67,7 +77,16 @@ def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, start_epo
 
 
 def TestModel(config, model, dataset, test_keys, use_gpu):
-    print("==> Test")
+    """ 
+    Main function to test the model. 
+    
+    :param Config config: a class for storing configuration settings.
+    :param Summarizer model: model using attention mechanism (Details: summarizer_module.py)
+    :param H5PY dataset: h5 dataset
+    :param list test_keys: a list id of testing videos
+    :param bool use_gpu: using gpu or not
+    """
+    print("====> Start testing...")
     with torch.no_grad():
         model.eval()
         fms = []
@@ -103,10 +122,10 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
                 table.append([key_idx+1, key, "{:.1%}".format(fm)])
 
             if config.save_results:
-                h5_res.create_dataset(key + '/score', data=probs)
-                h5_res.create_dataset(key + '/machine_summary', data=machine_summary)
+                h5_res.create_dataset(key + '/score', data = probs)
+                h5_res.create_dataset(key + '/machine_summary', data = machine_summary)
                 h5_res.create_dataset(key + '/gtscore', data=dataset[key]['gtscore'][...])
-                h5_res.create_dataset(key + '/fm', data=fm)
+                h5_res.create_dataset(key + '/fm', data = fm)
 
     if config.verbose:
         print(tabulate(table))
@@ -120,19 +139,15 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
 
 
 if __name__ == '__main__':
+    # Get configuration and print
     config = get_config(mode='train')
+    print("==========\n{}:\n==========".format(config))
     
+    # Create a seed and check whether to use GPU or CPU
     torch.manual_seed(config.seed)
     os.environ['CUDA_VISIBLE_DEVICES'] = config.gpu
     use_gpu = torch.cuda.is_available()
     if config.use_cpu: use_gpu = False
-
-    if not config.evaluate:
-        sys.stdout = Logger(osp.join(config.save_dir, 'log_train.txt'))
-    else:
-        sys.stdout = Logger(osp.join(config.save_dir, 'log_test.txt'))
-    print("==========\n{}:\n==========".format(config))
-
     if use_gpu:
         print("Currently using GPU {}".format(config.gpu))
         cudnn.benchmark = True
@@ -140,6 +155,13 @@ if __name__ == '__main__':
     else:
         print("Currently using CPU")
 
+    # Save log file
+    if not config.evaluate:
+        sys.stdout = Logger(osp.join(config.save_dir, 'log_train.txt'))
+    else:
+        sys.stdout = Logger(osp.join(config.save_dir, 'log_test.txt'))
+
+    # Get the dataset and video ID for training and testing
     print("Initialize dataset {}".format(config.dataset))
     dataset = h5py.File(config.dataset, 'r')
     num_videos = len(dataset.keys())
@@ -150,32 +172,35 @@ if __name__ == '__main__':
     test_keys = split['test_keys']
     print("# total videos {}. # train videos {}. # test videos {}".format(num_videos, len(train_keys), len(test_keys)))
 
+    # Create the model
     print("Initialize model")
-    model = Summarizer(input_size=config.input_size, output_size=config.input_size,block_size=60).to("cpu")
+    model = Summarizer(input_size = config.input_size, output_size = config.input_size, block_size = config.block_size).to("cpu")
     print("Model size: {:.5f}M".format(sum(p.numel() for p in model.parameters())/1000000.0))
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
+    # Create an Adam optimizer with the specified learning rate and weight decay
+    optimizer = torch.optim.Adam(model.parameters(), lr = config.lr, weight_decay = config.weight_decay)
     if config.stepsize > 0:
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=config.stepsize, gamma=config.gamma)
+        scheduler = lr_scheduler.StepLR(optimizer, step_size = config.stepsize, gamma = config.gamma)
 
+    # Load the availabe model
     if config.resume:
         print("Loading checkpoint from '{}'".format(config.resume))
         checkpoint = torch.load(config.resume)
         model.load_state_dict(checkpoint)
-    else:
-        start_epoch = 0
 
+    # Check GPU for dataparallel
     if use_gpu:
         model = nn.DataParallel(model).cuda()
 
+    # Training or testing the model
     if config.evaluate:
-        print("Evaluate only")
-        TestModel(model, dataset, test_keys, use_gpu)
-    else:
-        TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, start_epoch)
+        print("-----Evaluate only-----")
         TestModel(config, model, dataset, test_keys, use_gpu)
-
-    model_state_dict = model.module.state_dict() if use_gpu else model.state_dict()
-    model_save_path = osp.join(config.save_dir, 'model_epoch' + str(config.max_epoch) + '.pth.tar')
-    save_checkpoint(model_state_dict, model_save_path)
-    print("Model saved to {}".format(model_save_path))
+    else:
+        TrainModel(config, model, dataset, optimizer, train_keys, use_gpu)
+        TestModel(config, model, dataset, test_keys, use_gpu)
+        # Write the model to file
+        model_state_dict = model.module.state_dict() if use_gpu else model.state_dict()
+        model_save_path = osp.join(config.save_dir, 'model_epoch' + str(config.max_epoch) + '.pth.tar')
+        save_checkpoint(model_state_dict, model_save_path)
+        print("Model saved to {}".format(model_save_path))
