@@ -55,8 +55,8 @@ def get_config(**optional_kwargs):
     parser.add_argument('--block_size', type = int, default = 60, help = "Size of blocks used inside the attention matrix")
 
     # Optimization options
-    parser.add_argument('--lr', type = float, default = 1e-05, help = "Learning rate (default: 1e-05)")
-    parser.add_argument('--weight_decay', type = float, default = 1e-05, help = "Ưeight decay rate (default: 1e-05)")
+    parser.add_argument('--lr', type = float, default = 1e-5, help = "Learning rate (default: 5e-4)")
+    parser.add_argument('--weight_decay', type = float, default = 1e-5, help = "Weight decay rate (default: 1e05)")
     parser.add_argument('--max_epoch', type = int, default = 60, help = "Maximum epoch for training (default: 60)")
     parser.add_argument('--stepsize', type = int, default = 30, help = "How many steps to decay learning rate (default: 30)")
     parser.add_argument('--gamma', type = float, default = 0.1, help = "Learning rate decay (default: 0.1)")
@@ -64,7 +64,7 @@ def get_config(**optional_kwargs):
     parser.add_argument('--beta', type = float, default = 0.01, help = "Weight for summary length penalty term (default: 0.01)")
 
     # Misc
-    parser.add_argument('--seed', type = int, default = 1, help = "Random seed (default: 1)")
+    parser.add_argument('--seed', type = int, default = 12345, help = "Random seed (default: 12345)")
     parser.add_argument('--gpu', type = str, default = '0', help = "Which gpu devices to use")
     parser.add_argument('--use_cpu', action = 'store_true', help = "Use cpu device")
     parser.add_argument('--evaluate', action = 'store_true', help = "Whether to do evaluation only")
