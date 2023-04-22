@@ -1,6 +1,7 @@
 import time
 import datetime
 import numpy as np
+import random
 import os
 import os.path as osp
 import sys
@@ -71,8 +72,8 @@ def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu):
     write_json(reward_writers, osp.join(config.save_dir, 'rewards.json'))
 
     elapsed = round(time.time() - start_time)
-    elapsed = str(datetime.timedelta(seconds=elapsed))
-    print("Finished. Total elapsed time (h:m:s): {}".format(elapsed))
+    elapsed_str = time.strftime('%H:%M:%S', time.gmtime(elapsed)) + f".{elapsed:.3f}"[2:]
+    print("Finished. Total training time (hh:mm:ss.sss): {}".format(elapsed_str))
 
 
 def TestModel(config, model, dataset, test_keys, use_gpu):
@@ -86,6 +87,7 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
     :param bool use_gpu: using gpu or not
     """
     print("====> Start testing...")
+    start_time = time.time()
     with torch.no_grad():
         model.eval()
         fms = []
@@ -133,6 +135,9 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
     mean_fm = np.mean(fms)
     print("Average F-score {:.1%}".format(mean_fm))
 
+    elapsed = round(time.time() - start_time)
+    elapsed_str = time.strftime('%H:%M:%S', time.gmtime(elapsed)) + f".{elapsed:.3f}"[2:]
+    print("Finished. Total testing time (hh:mm:ss.sss): {}".format(elapsed_str))
 
 
 if __name__ == '__main__':
@@ -151,6 +156,8 @@ if __name__ == '__main__':
         torch.cuda.manual_seed_all(config.seed)
     else:
         print("Currently using CPU")
+    np.random.seed(config.seed)
+    random.seed(config.seed)
 
     # Save log file
     if not config.evaluate:
