@@ -142,7 +142,7 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
 
 if __name__ == '__main__':
     # Get configuration and print
-    config = get_config(mode='train')
+    config = get_config()
     print("==========\n{}:\n==========".format(config))
     
     # Create a seed and check whether to use GPU or CPU
