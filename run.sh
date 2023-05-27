@@ -1,0 +1,1 @@
+python main.py -d datasets/24_5_2023/DATA_SUMME_HIS_32_BINS.h5 -s datasets/splits2.json -vt summe --gpu 0 --split_id 0 --verbose --input_size 96 --save_time_process SUMME_HIS_32_BINS

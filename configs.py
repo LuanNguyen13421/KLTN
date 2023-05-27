@@ -44,6 +44,7 @@ def get_config():
     parser.add_argument('-s', '--split', type = str, required = True, help = "Path to split file (required)")
     parser.add_argument('--split_id', type = int, default = 0, help = "Split index (default: 0)")
     parser.add_argument('-vt', '--video_type', type = str, required = True, choices = ['tvsum', 'summe'], help = "Dataset to be used ['tvsum', 'summe']")
+    parser.add_argument('--save_time_process', type=str, default='time_processing', help="direction to save time processing")
     # Model options
     parser.add_argument('--input_size', type = int, default = 1024, help = "Feature size expected in the input (default: 1024)")
     parser.add_argument('--block_size', type = int, default = 60, help = "Size of blocks used inside the attention matrix (defalut: 60)")
