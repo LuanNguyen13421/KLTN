@@ -2,4 +2,7 @@ venv/
 __pycache__/
 Summaries/
 datasets/
-time_processing/
+time_training/
+videos/
+timeProcess/
+bash/
