@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
-import time
-import datetime
-import numpy as np
-import random
+from __future__ import print_function
 import os
 import os.path as osp
 import argparse
@@ -16,31 +13,45 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
-from utils import Logger, read_json, write_json, save_checkpoint
-from rewards import compute_reward
-import vsum_tools
-from configs import get_config
-from summarizer_module import *
-from create_data_utils.generate_dataset import Generate_Dataset
+from utils.utils import Logger, read_json, write_json, save_checkpoint
+from networks.DSN import *
+from utils.rewards import compute_reward
+from utils import vsum_tool
+from utils.generate_dataset import Generate_Dataset
 import cv2
 
 parser = argparse.ArgumentParser("Pytorch code for unsupervised video summarization with REINFORCE")
 # Dataset options
 parser.add_argument('-i', '--input', type=str, default='', help="input video")
 parser.add_argument('-o', '--output',type=str, default='./makedata/', help="output video")
-parser.add_argument('--timeDir', type=str, default='timeProcess', help="time processing dir")
-parser.add_argument('--bin', type=int, default=256, help="RGB BIN")
-parser.add_argument('--extract_method', type=str, required = True, choices = ['his', 'cnn'], help="extract feature method")
+# Misc
+parser.add_argument('--seed', type=int, default=1, help="random seed (default: 1)")
+parser.add_argument('--gpu', type=str, default='0', help="which gpu devices to use")
+# Model options
+parser.add_argument('--input-dim', type=int, default=2048, help="input dimension (default: 1024)")
+parser.add_argument('--hidden-dim', type=int, default=256, help="hidden unit dimension of DSN (default: 256)")
+parser.add_argument('--num-layers', type=int, default=1, help="number of RNN layers (default: 1)")
+parser.add_argument('--rnn-cell', type=str, default='lstm', help="RNN cell type (default: lstm)")
+
+parser.add_argument('-d', '--dataset', type=str, help="path to h5 dataset (required)")
 
 parser.add_argument('--model', type=str, default='model/best_model_epoch60.pth.tar', help="path to model file")
 parser.add_argument('--save-dir', type=str, default='output/', help="path to save output (default: 'output/')")
+parser.add_argument('--use-cpu', action='store_true', help="use cpu device")
 
 parser.add_argument('--save-name', default='',help="'generate video '")
 parser.add_argument('--fps', type=int, default=30, help="frames per second")
 parser.add_argument('--width', type=int, default=640, help="frame width")
 parser.add_argument('--height', type=int, default=480, help="frame height")
 
+parser.add_argument('--train-data', action='store_true', help="")
+
 args = parser.parse_args()
+
+torch.manual_seed(args.seed)
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+use_gpu = torch.cuda.is_available()
+if args.use_cpu: use_gpu = False
 
 def main():
     sys.stdout = Logger(osp.join(args.save_dir, 'log_test.txt'))
@@ -136,8 +147,7 @@ def video2summary(h5_dir,video_dir,output_dir):
     for idx1 in range(len(list(h5_res.keys()))):
         key = list(h5_res.keys())[idx1]
         summary = h5_res[key]['machine_summary'][...]
-        video_name = str(h5_res[key]['video_name'][()]).split('/')[-1]
-        video_name = video_name[0:-1]
+        video_name = h5_res[key]['video_name'][()].split('/')[-1]
         fps = h5_res[key]['fps'][()]
         if not os.path.isdir(osp.join(output_dir, video_name)):
             os.mkdir(osp.join(output_dir, video_name))
@@ -152,29 +162,11 @@ def video2summary(h5_dir,video_dir,output_dir):
     h5_res.close()
 
 if __name__ == '__main__':
-    # Get configuration and print
-    config = get_config()
-    print("==========\n{}:\n==========".format(config))
-    
-    # Create a seed and check whether to use GPU or CPU
-    torch.manual_seed(config.seed)
-    os.environ['CUDA_VISIBLE_DEVICES'] = config.gpu
-    use_gpu = torch.cuda.is_available()
-    if config.use_cpu: use_gpu = False
-    if use_gpu:
-        print("Currently using GPU {}".format(config.gpu))
-        cudnn.benchmark = True
-        torch.cuda.manual_seed_all(config.seed)
-    else:
-        print("Currently using CPU")
-    np.random.seed(config.seed)
-    random.seed(config.seed)
-
     name_video = args.input.split('/')[-1].split('.')[0]
     args.dataset = os.path.join(args.output, name_video + '.h5')
     args.save_name = name_video + '.mp4'
     if not os.path.exists(args.dataset):
-        gen = Generate_Dataset(args.input, args.dataset, args.timeDir, args.extract_method, args.bin)
+        gen = Generate_Dataset(args.input, args.dataset)
         gen.generate_dataset()
         gen.h5_file.close()
     main()

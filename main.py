@@ -19,7 +19,7 @@ from configs import get_config
 from summarizer_module import *
 import vsum_tools
 
-def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, time_training_path):
+def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu):
     """ 
     Main function to train the model. 
     
@@ -72,16 +72,11 @@ def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, time_trai
     write_json(reward_writers, osp.join(config.save_dir, 'rewards.json'))
 
     elapsed = round(time.time() - start_time)
-    time_training = elapsed
-    dir_training_time = os.path.join(time_training_path,'training_time.txt')
-    f = open(dir_training_time, 'a')
-    f.write(str(time_training))
-    f.write('\n')
-    elapsed_str = time.strftime('%H:%M:%S', time.gmtime(elapsed)) + f".{elapsed:.3f}"[2:]
-    print("Finished. Total training time (hh:mm:ss.sss): {}".format(elapsed_str))
+    elapsed_str = "{:.3f}".format(elapsed)
+    print("Finished. Total testing time (seconds): {}".format(elapsed_str))
 
 
-def TestModel(config, model, dataset, test_keys, use_gpu, time_training_path):
+def TestModel(config, model, dataset, test_keys, use_gpu):
     """ 
     Main function to test the model. 
     
@@ -133,24 +128,6 @@ def TestModel(config, model, dataset, test_keys, use_gpu, time_training_path):
 
     if config.verbose:
         print(tabulate(table))
-        dir_F_score = os.path.join(time_training_path,'F_Score.txt')
-        dir_video_name = os.path.join(time_training_path,'video_name.txt')
-        dir_video_number = os.path.join(time_training_path,'video_num.txt')
-        f = open(dir_F_score, 'a')
-        f1 = open(dir_video_name, 'a')
-        f2 = open(dir_video_number, 'a')
-        for key_idx, key in enumerate(test_keys):
-            data = str(dataset[key]['video_name'][...])
-            data = data[2:-1]
-            f1.write(data)
-            f1.write('\n')
-            f2.write(str(table[key_idx + 1][1]))
-            f2.write('\n')
-            f.write(str(table[key_idx + 1][2]))
-            f.write('\n')
-        f.close()
-        f1.close()
-        f2.close()
 
     if config.save_results:
         h5_res.close()
@@ -159,8 +136,9 @@ def TestModel(config, model, dataset, test_keys, use_gpu, time_training_path):
     print("Average F-score {:.1%}".format(mean_fm))
 
     elapsed = round(time.time() - start_time)
-    elapsed_str = time.strftime('%H:%M:%S', time.gmtime(elapsed)) + f".{elapsed:.3f}"[2:]
-    print("Finished. Total testing time (hh:mm:ss.sss): {}".format(elapsed_str))
+    elapsed_str = "{:.3f}".format(elapsed)
+    print("Finished. Total testing time (seconds): {}".format(elapsed_str))
+
 
 
 if __name__ == '__main__':
@@ -218,18 +196,13 @@ if __name__ == '__main__':
     # Check GPU for dataparallel
     if use_gpu:
         model = nn.DataParallel(model).cuda()
-    if not os.path.exists('time_training'): # check if the folder exists
-        os.mkdir('time_training')
-    time_training_path = os.path.join('time_training', config.save_time_training)
-    if not os.path.exists(time_training_path): # check if the folder exists
-        os.mkdir(time_training_path)
     # Training or testing the model
     if config.evaluate:
         print("-----Evaluate only-----")
-        TestModel(config, model, dataset, test_keys, use_gpu, time_training_path)
+        TestModel(config, model, dataset, test_keys, use_gpu)
     else:
-        TrainModel(config, model, dataset, optimizer, train_keys, use_gpu, time_training_path)
-        TestModel(config, model, dataset, test_keys, use_gpu, time_training_path)
+        TrainModel(config, model, dataset, optimizer, train_keys, use_gpu)
+        TestModel(config, model, dataset, test_keys, use_gpu)
         # Write the model to file
         model_state_dict = model.module.state_dict() if use_gpu else model.state_dict()
         model_save_path = osp.join(config.save_dir, 'model_epoch' + str(config.max_epoch) + '.pth.tar')
