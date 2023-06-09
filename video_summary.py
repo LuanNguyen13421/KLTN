@@ -13,11 +13,11 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
-from utils.utils import Logger, read_json, write_json, save_checkpoint
-from networks.DSN import *
-from utils.rewards import compute_reward
-from utils import vsum_tool
-from utils.generate_dataset import Generate_Dataset
+from utils import Logger, read_json, write_json, save_checkpoint
+from summarizer_module import *
+from rewards import compute_reward
+import vsum_tools
+from create_data_utils.generate_dataset import Generate_Dataset
 import cv2
 
 parser = argparse.ArgumentParser("Pytorch code for unsupervised video summarization with REINFORCE")
@@ -28,10 +28,8 @@ parser.add_argument('-o', '--output',type=str, default='./makedata/', help="outp
 parser.add_argument('--seed', type=int, default=1, help="random seed (default: 1)")
 parser.add_argument('--gpu', type=str, default='0', help="which gpu devices to use")
 # Model options
-parser.add_argument('--input-dim', type=int, default=2048, help="input dimension (default: 1024)")
-parser.add_argument('--hidden-dim', type=int, default=256, help="hidden unit dimension of DSN (default: 256)")
-parser.add_argument('--num-layers', type=int, default=1, help="number of RNN layers (default: 1)")
-parser.add_argument('--rnn-cell', type=str, default='lstm', help="RNN cell type (default: lstm)")
+parser.add_argument('--input_size', type = int, default = 1024, help = "Feature size expected in the input (default: 1024)")
+parser.add_argument('--block_size', type = int, default = 60, help = "Size of blocks used inside the attention matrix (defalut: 60)")
 
 parser.add_argument('-d', '--dataset', type=str, help="path to h5 dataset (required)")
 
@@ -73,15 +71,13 @@ def main():
         test_keys.append(key)
 
     print("Load model")
-    model = DSN(in_dim=args.input_dim, hid_dim=args.hidden_dim, num_layers=args.num_layers, cell=args.rnn_cell)
+    model = Summarizer(input_size = args.input_size, output_size = args.input_size, block_size = args.block_size)
     print("Model size: {:.5f}M".format(sum(p.numel() for p in model.parameters())/1000000.0))
 
     if args.model:
         print("Loading checkpoint from '{}'".format(args.model))
         checkpoint = torch.load(args.model)
         model.load_state_dict(checkpoint)
-    else:
-        start_epoch = 0
 
     if use_gpu:
         model = nn.DataParallel(model).cuda()
@@ -92,9 +88,7 @@ def main():
 def evaluate(model, dataset, test_keys, use_gpu):
     with torch.no_grad():
         model.eval()
-        fms = []
 
-        table = [["No.", "Video", "F-score"]]
         if not os.path.isdir(args.save_dir):
             os.mkdir(args.save_dir)
 
@@ -102,10 +96,11 @@ def evaluate(model, dataset, test_keys, use_gpu):
 
         for key_idx, key in enumerate(test_keys):
             seq = dataset[key]['features'][...]
-            seq = torch.from_numpy(seq).unsqueeze(0)
+            seq = torch.from_numpy(seq)
             if use_gpu: seq = seq.cuda()
             probs = model(seq)
-            probs = probs.data.cpu().squeeze().numpy()
+            probs = probs.unsqueeze(0)
+            probs = probs.cpu().squeeze().numpy()
 
             cps = dataset[key]['change_points'][...]
             num_frames = dataset[key]['n_frames'][()]
@@ -118,13 +113,15 @@ def evaluate(model, dataset, test_keys, use_gpu):
             for i in range(len(nfps)):
                 sum += nfps[i]
 
-            machine_summary = vsum_tool.generate_summary(probs, cps, num_frames, nfps, positions)
+            machine_summary = vsum_tools.generate_summary(probs, cps, num_frames, nfps, positions)
+
             h5_res.create_dataset(key + '/score', data=probs)
             h5_res.create_dataset(key + '/machine_summary', data=machine_summary)
             h5_res.create_dataset(key + '/video_name', data=video_name)
             h5_res.create_dataset(key + '/fps', data=fps)
 
     h5_res.close()
+
 
 def frm2video(video_dir, summary, vid_writer):
     print('[INFO] Video Summary')
@@ -138,6 +135,7 @@ def frm2video(video_dir, summary, vid_writer):
         else:
             count += 1
     print('[OUTPUT] total {} frame, ignore {} frame'.format(len(summary)-count, count))
+    
 def video2summary(h5_dir,video_dir,output_dir):
     if not osp.exists(output_dir):
         os.mkdir(output_dir)

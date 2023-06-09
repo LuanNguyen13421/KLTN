@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     # Create the model
     print("Initialize model")
-    model = Summarizer(input_size = config.input_size, output_size = config.input_size, block_size = config.block_size).to("cpu")
+    model = Summarizer(input_size = config.input_size, output_size = config.input_size, block_size = config.block_size)
     print("Model size: {:.5f}M".format(sum(p.numel() for p in model.parameters())/1000000.0))
 
     # Create an Adam optimizer with the specified learning rate and weight decay
