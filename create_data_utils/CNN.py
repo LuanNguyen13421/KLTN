@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 from torchvision import transforms, models
 from torch.autograd import Variable
 
@@ -29,7 +30,8 @@ class ResNet(nn.Module):
             raise Exception('No such ResNet!')
 
         resnet.float()
-        resnet.cuda()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        resnet.to(device)
         resnet.eval()
 
         module_list = list(resnet.children())

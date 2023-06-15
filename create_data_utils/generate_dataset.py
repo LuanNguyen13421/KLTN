@@ -18,7 +18,7 @@ import h5py
 from create_data_utils.extract_feature import extract_features_histogram
 import time
 class Generate_Dataset:
-    def __init__(self, video_path, save_path, time_path, extract_method, BIN):
+    def __init__(self, video_path, save_path, extract_method, BIN):
         self.resnet = ResNet()
         self.dataset = {}
         self.video_list = []
@@ -27,7 +27,6 @@ class Generate_Dataset:
         self.h5_file = h5py.File(save_path, 'a')
         self.extract_method = extract_method
         self.BIN = BIN
-        self.timePath = time_path
         self._set_video_list(video_path)
 
     def _set_video_list(self, video_path):
