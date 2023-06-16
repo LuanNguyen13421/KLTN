@@ -29,6 +29,7 @@ parser.add_argument('--seed', type=int, default=1, help="Random seed (default: 1
 parser.add_argument('--gpu', type=str, default='0', help="Which gpu devices to use")
 parser.add_argument('--extract-method', type=str, required=True, choices=['his', 'cnn'], help="Extract feature method [Color histogram (his) / CNN (cnn)]")
 parser.add_argument('--bin', type=int, default=256, help="RGB BIN (If extract feature method is color histogram)")
+parser.add_argument('--proportion', type=float, default=0.15, help="Length of video summary (compared to original video length)")
 # Model options
 parser.add_argument('--input-size', type=int, default=1024, help="Feature size expected in the input (default: 1024)")
 parser.add_argument('--block-size', type=int, default=60, help="Size of blocks used inside the attention matrix (defalut: 60)")
@@ -82,7 +83,7 @@ def main():
     if use_gpu:
         model = nn.DataParallel(model).cuda()
     evaluate(model, dataset, test_keys, use_gpu)
-    print("Summary")
+    print("Summarizing video...")
     video2summary(os.path.join(args.save_dir,'result.h5'),args.input ,args.save_dir)
 
 def evaluate(model, dataset, test_keys, use_gpu):
@@ -113,7 +114,7 @@ def evaluate(model, dataset, test_keys, use_gpu):
             for i in range(len(nfps)):
                 sum += nfps[i]
 
-            machine_summary = vsum_tools.generate_summary(probs, cps, num_frames, nfps, positions)
+            machine_summary = vsum_tools.generate_summary(probs, cps, num_frames, nfps, positions, args.proportion)
             h5_res.create_dataset(key + '/score', data=probs)
             h5_res.create_dataset(key + '/machine_summary', data=machine_summary)
             h5_res.create_dataset(key + '/video_name', data=video_name)
