@@ -5,7 +5,7 @@ import os
 parser = argparse.ArgumentParser("Code adding user summary to created dataset (Only for SumMe or TVSum dataset)")
 parser.add_argument('--input', type=str, help="input dataset")
 parser.add_argument('--output', type=str, default='', help="output dataset")
-parser.add_argument('--dataset_name', type=str, required = True, choices = ['tvsum', 'summe'], help="Dataset's name: tvsum or summe")
+parser.add_argument('--dataset-name', type=str, required = True, choices = ['tvsum', 'summe'], help="Dataset's name: tvsum or summe")
 args = parser.parse_args()
 
 def readSUMME(file, fileoutput):

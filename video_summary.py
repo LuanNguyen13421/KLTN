@@ -135,6 +135,7 @@ def frm2video(video_dir, summary, vid_writer):
         else:
             count += 1
     print('[OUTPUT] total {} frame, ignore {} frame'.format(len(summary)-count, count))
+    print('Result is in',video_dir)
     
 def video2summary(h5_dir, video_dir, output_dir):
     if not osp.exists(output_dir):
