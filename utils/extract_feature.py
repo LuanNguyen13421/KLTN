@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+
 def extract_features_histogram(image, BIN):
     # Compute the color histogram for each channel
     hist_r = cv2.calcHist([image], [0], None, [BIN], [0, 256])

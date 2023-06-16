@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import os
 import sys
 import errno
-import shutil
 import json
 import os.path as osp
 

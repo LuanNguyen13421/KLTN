@@ -42,7 +42,8 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = self.transform(x)
         x = x.unsqueeze(0)  # reshape the single image s.t. it has a batch dim
-        x = Variable(x).cuda()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        x = Variable(x).to(device)
         res_conv5 = self.conv5(x)
         res_pool5 = self.pool5(res_conv5)
         res_pool5 = res_pool5.view(res_pool5.size(0), -1)

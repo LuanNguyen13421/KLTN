@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from self_attention_module import SelfAttention
+from model.self_attention_module import SelfAttention
 
 
 class Summarizer(nn.Module):

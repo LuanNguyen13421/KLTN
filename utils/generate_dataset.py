@@ -8,23 +8,22 @@
 
 """
 import os
-from create_data_utils.CNN import ResNet
-from create_data_utils.KTS.cpd_auto import cpd_auto
+from utils.CNN import ResNet
+from utils.KTS.cpd_auto import cpd_auto
 from tqdm import tqdm
 import math
 import cv2
 import numpy as np
 import h5py
-from create_data_utils.extract_feature import extract_features_histogram
-import time
+from utils.extract_feature import extract_features_histogram
+
 class Generate_Dataset:
     def __init__(self, video_path, save_path, extract_method, BIN):
         self.resnet = ResNet()
         self.dataset = {}
         self.video_list = []
         self.video_path = ''
-        self.save_path = save_path
-        self.h5_file = h5py.File(save_path, 'a')
+        self.h5_file = h5py.File(save_path, 'w')
         self.extract_method = extract_method
         self.BIN = BIN
         self._set_video_list(video_path)
@@ -84,15 +83,11 @@ class Generate_Dataset:
         temp_path = self.video_path
         if self.extract_method == 'his':
             print('[INFO] HIS processing')
-            temp_path = temp_path.split("\\")[-1] + '_HIS_' + str(self.BIN) + '_BINS' + '.txt'
+            temp_path = temp_path.split("/")[-1] + '_HIS_' + str(self.BIN) + '_BINS' + '.txt'
         else:
             print('[INFO] CNN processing')
-            temp_path = temp_path.split("\\")[-1] + '_CNN' + '.txt'
-        if not os.path.exists(self.timePath): # check if the folder exists
-            os.mkdir(self.timePath)
-        file_path = os.path.join(self.timePath, temp_path)
+            temp_path = temp_path.split("/")[-1] + '_CNN' + '.txt'
         for video_idx, video_filename in enumerate(self.video_list):
-            start = time.time()
             video_path = video_filename
             if ".h5" in video_path:
                 continue
@@ -131,20 +126,8 @@ class Generate_Dataset:
                     break
 
             video_capture.release()
-            end = time.time()
-            elapsed_time_feature = int(end) - int(start)
-            start = time.time()
+
             change_points, n_frame_per_seg = self._get_change_points(video_feat, n_frames, fps)
-            end = time.time()
-            elapsed_time_find_change_point = end - start
-            print("Extracting feature time: ",elapsed_time_feature)
-            print("Find change point: ",elapsed_time_find_change_point)
-            videoName = video_filename.split('.')[0]
-            with open(file_path, 'a') as f:
-                f.write(f'Video: {videoName}\n')
-                f.write(f'Number of frames: {n_frames}\n')
-                f.write(f'Extracting feature time: {elapsed_time_feature}\n')
-                f.write(f'Finding change point time: {elapsed_time_find_change_point}\n')
             self.h5_file['video_{}'.format(video_idx+1)]['features'] = list(video_feat_for_train)
             self.h5_file['video_{}'.format(video_idx+1)]['picks'] = np.array(list(picks))
             self.h5_file['video_{}'.format(video_idx+1)]['n_frames'] = n_frames

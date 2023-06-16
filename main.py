@@ -1,5 +1,4 @@
 import time
-import datetime
 import numpy as np
 import random
 import os
@@ -13,11 +12,12 @@ from torch.distributions import Bernoulli
 import h5py
 from tabulate import tabulate
 
-from utils import Logger, read_json, write_json, save_checkpoint
-from rewards import compute_reward
-from configs import get_config
-from summarizer_module import *
-import vsum_tools
+from utils.util import Logger, read_json, write_json, save_checkpoint
+from utils.rewards import compute_reward
+from utils.configs import get_config
+import utils.vsum_tools as vsum_tools
+from model.summarizer_module import *
+
 
 def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu):
     """ 
@@ -40,6 +40,7 @@ def TrainModel(config, model, dataset, optimizer, train_keys, use_gpu):
         idxs = np.arange(len(train_keys))
         np.random.shuffle(idxs)
 
+        # Input each Video to Model
         for idx in idxs:
             key = train_keys[idx]
             seq = dataset[key]['features'][...] # sequence of features, (seq_len, dim)
@@ -140,7 +141,6 @@ def TestModel(config, model, dataset, test_keys, use_gpu):
     print("Finished. Total testing time (seconds): {}".format(elapsed_str))
 
 
-
 if __name__ == '__main__':
     # Get configuration and print
     config = get_config()
@@ -202,9 +202,13 @@ if __name__ == '__main__':
         TestModel(config, model, dataset, test_keys, use_gpu)
     else:
         TrainModel(config, model, dataset, optimizer, train_keys, use_gpu)
-        TestModel(config, model, dataset, test_keys, use_gpu)
+
         # Write the model to file
         model_state_dict = model.module.state_dict() if use_gpu else model.state_dict()
         model_save_path = osp.join(config.save_dir, 'model_epoch' + str(config.max_epoch) + '.pth.tar')
         save_checkpoint(model_state_dict, model_save_path)
         print("Model saved to {}".format(model_save_path))
+
+        TestModel(config, model, dataset, test_keys, use_gpu)
+        
+    dataset.close()
