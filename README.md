@@ -8,6 +8,18 @@ Thành viên:
 Giảng viên hướng dẫn:
 - TS. Võ Hoài Việt.
 
+# Requirement
+python=3.x
+
+pytorch
+
+tabulate
+
+h5py
+
+opencv-python
+
+tqdm
 
 # Câu lệnh sử dụng
 ## Tạo bộ dữ liệu mới
