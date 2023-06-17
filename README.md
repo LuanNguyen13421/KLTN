@@ -11,6 +11,11 @@ Giảng viên hướng dẫn:
 
 # Câu lệnh sử dụng
 ## Tạo bộ dữ liệu mới
+
+*Link tải video của hai bộ dữ liệu SumMe và TVSum*
+- SumMe: https://gyglim.github.io/me/vsum/index.html
+- TVSum: http://people.csail.mit.edu/yalesong/tvsum/
+
 Đưa toàn bộ video của tập dữ liệu (SumMe hoặc TVSum) vào một thư mục (videos/) và sử dụng lệnh sau
 ```bash
 python create_data.py --input videos/ --output datasets/my_dataset.h5 --extract-method his --bin 32
